@@ -6,3 +6,7 @@ export interface BInterfaceName {
 }
 export interface CInterfaceName {
 }
+/**
+ * Some description
+ */
+export declare type ZTypeName = string | null;
