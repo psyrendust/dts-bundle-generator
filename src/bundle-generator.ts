@@ -89,7 +89,7 @@ export function generateDtsBundle(filePath: string, options: GenerationOptions =
 		throw new Error('Symbol for root source file not found');
 	}
 
-	const rootFileExports = typeChecker.getExportsOfModule(rootSourceFileSymbol).map((symbol: ts.Symbol) => getActualSymbol(symbol, typeChecker));
+	const rootFileExports = getExportsForSourceFile(typeChecker, rootSourceFileSymbol);
 
 	const collectionResult: CollectingResult = {
 		typesReferences: new Set<string>(),
@@ -245,10 +245,11 @@ function updateResultForRootSourceFile(params: UpdateParams, result: CollectingR
 
 	// add skipped by `updateResult` exports
 	for (const statement of params.statements) {
-		const isExportDefault = ts.isExportAssignment(statement) && !statement.isExportEquals;
+		// "export default" or "export ="
+		const isExportAssignment = ts.isExportAssignment(statement);
 		const isReExportFromImportable = isReExportFromImportableModule(statement);
 
-		if (isExportDefault || isReExportFromImportable) {
+		if (isExportAssignment || isReExportFromImportable) {
 			result.statements.push(statement);
 		}
 	}
@@ -424,4 +425,21 @@ function getDeclarationsForSymbol(symbol: ts.Symbol): ts.Declaration[] {
 
 function isDeclarationFromExternalModule(node: ts.Declaration): boolean {
 	return getLibraryName(node.getSourceFile().fileName) !== null;
+}
+
+function getExportsForSourceFile(typeChecker: ts.TypeChecker, sourceFileSymbol: ts.Symbol): ts.Symbol[] {
+	let result: ts.Symbol[] | undefined;
+
+	if (sourceFileSymbol.exports !== undefined) {
+		const commonJsExport = sourceFileSymbol.exports.get(ts.InternalSymbolName.ExportEquals);
+		if (commonJsExport !== undefined) {
+			result = [commonJsExport];
+		}
+	}
+
+	if (result === undefined) {
+		result = typeChecker.getExportsOfModule(sourceFileSymbol);
+	}
+
+	return result.map((symbol: ts.Symbol) => getActualSymbol(symbol, typeChecker));
 }
