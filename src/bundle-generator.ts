@@ -10,9 +10,9 @@ import {
 	isDeclareModuleStatement,
 	isNamespaceStatement,
 	isNodeNamedDeclaration,
-} from './typescript-helpers';
+} from './helpers/typescript';
 
-import { getLibraryName } from './node-modules-helpers';
+import { getLibraryName } from './helpers/node-modules';
 
 import {
 	getModuleInfo,
